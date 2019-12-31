@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
       .mergeWith(eventName.dismissEvents())
       .map { eventName.value }
       .withLatestFrom(cache.eventHistory()) { name: String, history: Set<EventHistory> ->
-        history.single { it.value == name }.properties ?: emptySet()
+        history.firstOrNull { it.value == name }?.properties ?: emptySet()
       }
       .distinctUntilChanged()
       .subscribeBy { propertySet ->
@@ -70,10 +70,8 @@ class MainActivity : AppCompatActivity() {
         .toJson()
       analytics.apply {
         cache.saveEvent(eventName.value, propertySequence.map(Pair<String, String>::first).toList())
-        /*
-          logEvent(eventName.value, json)
-          uploadEvents()
-        */
+        logEvent(eventName.value, json)
+        uploadEvents()
       }
     }
   }
@@ -120,7 +118,7 @@ class Analytics(app: Application) {
   }
 
   private val mixPanel by lazy {
-    MixpanelAPI.getInstance(app, "cba53749f6da55f4f1fd953f063f1137")
+    MixpanelAPI.getInstance(app, "c7b12b5f6540b49c30db2bd8ea5b62bc")
   }
 }
 
