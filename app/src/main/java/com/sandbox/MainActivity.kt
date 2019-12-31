@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.children
 import com.amplitude.api.Amplitude
 import com.amplitude.api.AmplitudeClient
+import com.heapanalytics.android.Heap
 import com.jakewharton.rxbinding3.widget.itemClickEvents
 import com.mixpanel.android.mpmetrics.MixpanelAPI
 import com.sandbox.rxbindings.dismissEvents
@@ -67,7 +68,6 @@ class MainActivity : AppCompatActivity() {
       val json = propertySequence
         .filter { (_, value) -> value.isNotBlank() }
         .toMap()
-        .toJson()
       analytics.apply {
         cache.saveEvent(eventName.value, propertySequence.map(Pair<String, String>::first).toList())
         logEvent(eventName.value, json)
@@ -101,9 +101,10 @@ fun Map<String, Any>.toJson(): JSONObject = json {
 fun json(jsonAction: JSONObject.() -> Unit): JSONObject = JSONObject().apply(jsonAction)
 
 class Analytics(app: Application) {
-  fun logEvent(event: String, properties: JSONObject) {
-    amplitude.logEvent(event, properties)
-    mixPanel.track(event, properties)
+  fun logEvent(event: String, properties: Map<String, String>) {
+    amplitude.logEvent(event, properties.toJson())
+    mixPanel.track(event, properties.toJson())
+    Heap.track(event, properties)
   }
 
   fun uploadEvents() {
