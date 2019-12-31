@@ -1,14 +1,11 @@
 package com.sandbox
 
-import android.app.Application
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.children
 import com.amplitude.api.Amplitude
-import com.amplitude.api.AmplitudeClient
-import com.heapanalytics.android.Heap
 import com.jakewharton.rxbinding3.widget.itemClickEvents
 import com.mixpanel.android.mpmetrics.MixpanelAPI
 import com.sandbox.rxbindings.dismissEvents
@@ -21,7 +18,24 @@ import kotlinx.android.synthetic.main.layout_property.view.*
 import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
-  private val analytics by lazy { Analytics(application) }
+  private val amplitude by lazy {
+    AmplitudeProvider(
+      Amplitude.getInstance()
+        .initialize(applicationContext, "91bbf2e9f4276cb2c5d35e4dc8514761")
+        .enableForegroundTracking(application)
+    )
+  }
+  private val mixPanel by lazy {
+    MixPanelProvider(
+      MixpanelAPI.getInstance(
+        applicationContext,
+        "c7b12b5f6540b49c30db2bd8ea5b62bc"
+      )
+    )
+  }
+  private val heap = HeapProvider()
+
+  private val analytics by lazy { Analytics(listOf(amplitude, mixPanel, heap)) }
   private val cache by lazy { Datastore(application) }
   private val disposables by lazy { CompositeDisposable() }
 
@@ -91,35 +105,6 @@ class MainActivity : AppCompatActivity() {
         propertyLayout.removeView(this)
       }
     }
-  }
-}
-
-fun Map<String, Any>.toJson(): JSONObject = json {
-  forEach { (key, value) -> put(key, value) }
-}
-
-fun json(jsonAction: JSONObject.() -> Unit): JSONObject = JSONObject().apply(jsonAction)
-
-class Analytics(app: Application) {
-  fun logEvent(event: String, properties: Map<String, String>) {
-    amplitude.logEvent(event, properties.toJson())
-    mixPanel.track(event, properties.toJson())
-    Heap.track(event, properties)
-  }
-
-  fun uploadEvents() {
-    amplitude.uploadEvents()
-    mixPanel.flush()
-  }
-
-  private val amplitude: AmplitudeClient by lazy {
-    Amplitude.getInstance()
-      .initialize(app, "91bbf2e9f4276cb2c5d35e4dc8514761")
-      .enableForegroundTracking(app)
-  }
-
-  private val mixPanel by lazy {
-    MixpanelAPI.getInstance(app, "c7b12b5f6540b49c30db2bd8ea5b62bc")
   }
 }
 
